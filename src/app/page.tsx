@@ -1,24 +1,21 @@
-import Link from "next/link";
+import ConfigForm from "@/components/ConfigForm";
 
 export default function Home() {
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen p-8 text-center bg-background text-foreground">
-      <div className="max-w-3xl space-y-6">
-        <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-accent">
+    <main className="min-h-screen bg-background text-foreground">
+      {/* ── Hero header ─────────────────────────────────────── */}
+      <header className="pt-16 pb-10 text-center space-y-3">
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-accent">
           Deadlock Detection System
         </h1>
-        <p className="text-xl md:text-2xl text-foreground/80 font-light">
-          OS Mini Project — Resource Allocation Graph & Deadlock Detection
+        <p className="text-lg md:text-xl text-foreground/60 font-light">
+          OS Mini Project — Resource Allocation Graph &amp; Deadlock Detection
         </p>
+      </header>
 
-        <div className="pt-8">
-          <Link
-            href="/detect"
-            className="inline-flex items-center justify-center px-8 py-4 text-base font-medium text-foreground bg-accent hover:bg-accent-hover rounded-lg transition-colors shadow-lg"
-          >
-            Start Detection
-          </Link>
-        </div>
+      {/* ── Config form ─────────────────────────────────────── */}
+      <div className="px-4 pb-20">
+        <ConfigForm />
       </div>
     </main>
   );
