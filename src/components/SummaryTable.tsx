@@ -1,28 +1,30 @@
-import { SystemState, DetectionResult } from "../types";
+"use client";
+
+import { SystemState, DetectionResult } from "@/types";
+import { StepState } from "@/components/RAGGraph";
 
 interface SummaryTableProps {
     state: SystemState;
     result: DetectionResult | null;
+    stepState?: StepState | null;
 }
 
-export default function SummaryTable({ state, result }: SummaryTableProps) {
-    // Helpers to format matrix rows
+export default function SummaryTable({ state, result, stepState }: SummaryTableProps) {
     const formatArray = (arr: number[]) => `[${arr.join(", ")}]`;
 
-    // Function to determine process status
-    const getProcessStatus = (processIndex: number): "Deadlocked" | "Waiting" | "Running" => {
-        // If we have a result and this process is in the deadlocked array
-        if (result?.isDeadlocked && result.deadlockedProcesses.includes(processIndex)) {
+    const getProcessStatus = (i: number): "Deadlocked" | "Waiting" | "Running" | "Completed" => {
+        // step-by-step completed overrides
+        if (stepState?.finishedProcesses[i]) {
+            return "Completed";
+        }
+
+        if (result?.isDeadlocked && result.deadlockedProcesses.includes(i)) {
             return "Deadlocked";
         }
 
-        // Process is waiting if it has outstanding requests
-        const hasRequests = state.request[processIndex].some((req) => req > 0);
-        if (hasRequests) {
-            return "Waiting";
-        }
+        const hasRequests = state.request[i].some((r) => r > 0);
+        if (hasRequests) return "Waiting";
 
-        // Otherwise, it's holding resources or has nothing to do (Running)
         return "Running";
     };
 
@@ -34,7 +36,21 @@ export default function SummaryTable({ state, result }: SummaryTableProps) {
                 return "bg-yellow-500/20 text-yellow-500 border border-yellow-500/50";
             case "Running":
                 return "bg-success/20 text-success border border-success/50";
+            case "Completed":
+                return "bg-gray-500/20 text-gray-400 border border-gray-500/50";
         }
+    };
+
+    const getRowClass = (i: number) => {
+        if (!stepState) return "hover:bg-surface-border/20 transition-colors";
+
+        if (stepState.currentProcess === i) {
+            return "bg-accent/15 border-l-2 border-l-accent transition-colors";
+        }
+        if (stepState.finishedProcesses[i]) {
+            return "opacity-50 transition-colors";
+        }
+        return "hover:bg-surface-border/20 transition-colors";
     };
 
     return (
@@ -55,7 +71,7 @@ export default function SummaryTable({ state, result }: SummaryTableProps) {
                             const status = getProcessStatus(i);
 
                             return (
-                                <tr key={i} className="hover:bg-surface-border/20 transition-colors">
+                                <tr key={i} className={getRowClass(i)}>
                                     <td className="px-4 py-3 text-sm font-medium">P{i}</td>
                                     <td className="px-4 py-3 text-sm text-foreground/80 font-mono tracking-wider">
                                         {formatArray(alloc)}

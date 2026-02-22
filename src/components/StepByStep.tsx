@@ -1,14 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { StepInfo } from "@/types";
 
 interface StepByStepProps {
     steps: StepInfo[];
+    onStepChange?: (currentProcess: number | null, finishedProcesses: boolean[]) => void;
 }
 
-export default function StepByStep({ steps }: StepByStepProps) {
+export default function StepByStep({ steps, onStepChange }: StepByStepProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
+
+    // emit step state to parent whenever step changes
+    useEffect(() => {
+        if (steps && steps.length > 0) {
+            const step = steps[currentIndex];
+            onStepChange?.(step.selectedProcess, step.finish);
+        }
+    }, [currentIndex, steps, onStepChange]);
 
     if (!steps || steps.length === 0) return null;
 
@@ -49,8 +58,8 @@ export default function StepByStep({ steps }: StepByStepProps) {
                             <span
                                 key={i}
                                 className={`flex items-center justify-center w-8 h-8 rounded text-sm ${f
-                                        ? "bg-success/20 text-success border border-success/30"
-                                        : "bg-error/20 text-error border border-error/30"
+                                    ? "bg-success/20 text-success border border-success/30"
+                                    : "bg-error/20 text-error border border-error/30"
                                     }`}
                             >
                                 {f ? 'T' : 'F'}

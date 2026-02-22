@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { SystemState, DetectionResult, StepInfo } from "@/types";
 import { detectDeadlock, detectMultiInstanceStepByStep } from "@/lib/deadlockDetector";
 import ConfigForm from "@/components/ConfigForm";
 import ResultDisplay from "@/components/ResultDisplay";
-import RAGGraph from "@/components/RAGGraph";
+import RAGGraph, { StepState } from "@/components/RAGGraph";
 import SummaryTable from "@/components/SummaryTable";
 import StepByStep from "@/components/StepByStep";
 
@@ -13,20 +13,29 @@ export default function Home() {
   const [systemState, setSystemState] = useState<SystemState | null>(null);
   const [detectionResult, setDetectionResult] = useState<DetectionResult | null>(null);
   const [steps, setSteps] = useState<StepInfo[] | null>(null);
+  const [stepState, setStepState] = useState<StepState | null>(null);
 
   const handleDetect = (state: SystemState) => {
     setSystemState(state);
     const result = detectDeadlock(state);
     setDetectionResult(result);
-    // Generate step-by-step trace regardless of outcome
     setSteps(detectMultiInstanceStepByStep(state));
+    setStepState(null);
   };
 
   const handleReset = () => {
     setSystemState(null);
     setDetectionResult(null);
     setSteps(null);
+    setStepState(null);
   };
+
+  const handleStepChange = useCallback(
+    (currentProcess: number | null, finishedProcesses: boolean[]) => {
+      setStepState({ currentProcess, finishedProcesses });
+    },
+    []
+  );
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -68,7 +77,11 @@ export default function Home() {
           <div className="flex flex-col lg:flex-row gap-8">
             {/* RAG Graph */}
             <div className="flex-1 min-w-0">
-              <RAGGraph state={systemState} />
+              <RAGGraph
+                state={systemState}
+                detectionResult={detectionResult}
+                stepState={stepState}
+              />
             </div>
 
             {/* Summary Table */}
@@ -77,7 +90,11 @@ export default function Home() {
                 <h2 className="text-xl font-semibold tracking-tight">
                   Process Summary
                 </h2>
-                <SummaryTable state={systemState} result={detectionResult} />
+                <SummaryTable
+                  state={systemState}
+                  result={detectionResult}
+                  stepState={stepState}
+                />
               </div>
             </div>
           </div>
@@ -85,7 +102,7 @@ export default function Home() {
           {/* Step By Step Visualization */}
           {steps && steps.length > 0 && (
             <div className="mt-12 animate-[fadeSlideIn_0.4s_ease-out_0.2s] fill-mode-both">
-              <StepByStep steps={steps} />
+              <StepByStep steps={steps} onStepChange={handleStepChange} />
             </div>
           )}
         </div>
