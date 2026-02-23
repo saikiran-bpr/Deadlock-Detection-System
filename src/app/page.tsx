@@ -13,6 +13,7 @@ import ResolvePanel from "@/components/ResolvePanel";
 import ImportExport from "@/components/ImportExport";
 import SimulateRequest from "@/components/SimulateRequest";
 import Toast from "@/components/Toast";
+import Navbar from "@/components/Navbar";
 import { useToast } from "@/hooks/useToast";
 
 export default function Home() {
@@ -79,46 +80,51 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      {/* ── Hero header ─────────────────────────────────────── */}
-      <header className="pt-16 pb-10 text-center space-y-3">
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-accent">
-          Deadlock Detection System
-        </h1>
-        <p className="text-lg md:text-xl text-foreground/60 font-light">
-          OS Mini Project — Resource Allocation Graph &amp; Deadlock Detection
-        </p>
-      </header>
+      <Navbar />
 
-      {/* ── Sample scenarios ────────────────────────────────── */}
-      <div className="px-4 max-w-5xl mx-auto mb-8">
-        <SampleLoader onLoad={handleLoadScenario} />
-      </div>
+      {/* ── Hero header & Scenarios ─────────────────────────── */}
+      <section id="home" className="pt-16 pb-12 max-w-7xl mx-auto space-y-10">
+        <header className="text-center space-y-3 px-4">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-accent">
+            Deadlock Detection System
+          </h1>
+          <p className="text-lg md:text-xl text-foreground/60 font-light">
+            OS Mini Project — Resource Allocation Graph &amp; Deadlock Detection
+          </p>
+        </header>
+
+        <div className="px-4 max-w-5xl mx-auto">
+          <SampleLoader onLoad={handleLoadScenario} />
+        </div>
+      </section>
 
       {/* ── Config form (top) ───────────────────────────────── */}
-      <div className="px-4">
-        <ConfigForm
-          onDetect={handleDetect}
-          onReset={handleReset}
-          hasResult={detectionResult !== null}
-          externalState={externalState}
-          showToast={showToast}
-        />
-      </div>
+      <section id="config" className="py-12 px-4 max-w-7xl mx-auto space-y-8">
+        <div className="bg-surface/30 backdrop-blur-sm border border-surface-border rounded-2xl p-6 md:p-8 shadow-xl">
+          <ConfigForm
+            onDetect={handleDetect}
+            onReset={handleReset}
+            hasResult={detectionResult !== null}
+            externalState={externalState}
+            showToast={showToast}
+          />
+        </div>
 
-      {/* ── Import / Export ─────────────────────────────────── */}
-      <div className="px-4 max-w-5xl mx-auto mt-4">
-        <ImportExport
-          state={systemState}
-          onImport={handleLoadScenario}
-          showToast={showToast}
-        />
-      </div>
+        {/* ── Import / Export ─────────────────────────────────── */}
+        <div className="max-w-5xl mx-auto">
+          <ImportExport
+            state={systemState}
+            onImport={handleLoadScenario}
+            showToast={showToast}
+          />
+        </div>
+      </section>
 
       {/* ── Detection Results ───────────────────────────────── */}
       {detectionResult && systemState && (
-        <div className="px-4 mt-12 max-w-5xl mx-auto space-y-10 animate-[fadeSlideIn_0.4s_ease-out]">
+        <section id="detection" className="py-12 px-4 max-w-7xl mx-auto space-y-10 animate-[fadeSlideIn_0.4s_ease-out]">
           {/* Section heading */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full max-w-5xl mx-auto">
             <div className="h-px flex-1 bg-surface-border" />
             <h2 className="text-lg font-semibold text-foreground/60 tracking-wide uppercase">
               Detection Results
@@ -144,9 +150,9 @@ export default function Home() {
           </div>
 
           {/* Graph (left) + Summary Table (right) */}
-          <div className="flex flex-col lg:flex-row gap-8">
+          <div className="flex flex-col lg:flex-row gap-8 items-start">
             {/* RAG Graph */}
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 w-full bg-surface/30 backdrop-blur-sm border border-surface-border rounded-2xl p-6 shadow-xl">
               <RAGGraph
                 state={systemState}
                 detectionResult={detectionResult}
@@ -171,11 +177,13 @@ export default function Home() {
 
           {/* Step By Step Visualization */}
           {steps && steps.length > 0 && (
-            <div className="mt-12 animate-[fadeSlideIn_0.4s_ease-out_0.2s] fill-mode-both">
-              <StepByStep steps={steps} onStepChange={handleStepChange} />
-            </div>
+            <section id="step-by-step" className="pt-16 pb-12 animate-[fadeSlideIn_0.4s_ease-out_0.2s] fill-mode-both">
+              <div className="bg-surface/30 backdrop-blur-sm border border-surface-border rounded-2xl p-6 md:p-8 shadow-xl">
+                <StepByStep steps={steps} onStepChange={handleStepChange} />
+              </div>
+            </section>
           )}
-        </div>
+        </section>
       )}
 
       {/* ── Footer spacer ───────────────────────────────────── */}
