@@ -10,6 +10,9 @@ import SummaryTable from "@/components/SummaryTable";
 import StepByStep from "@/components/StepByStep";
 import SampleLoader from "@/components/SampleLoader";
 import ResolvePanel from "@/components/ResolvePanel";
+import ImportExport from "@/components/ImportExport";
+import Toast from "@/components/Toast";
+import { useToast } from "@/hooks/useToast";
 
 export default function Home() {
   const [systemState, setSystemState] = useState<SystemState | null>(null);
@@ -17,8 +20,8 @@ export default function Home() {
   const [steps, setSteps] = useState<StepInfo[] | null>(null);
   const [stepState, setStepState] = useState<StepState | null>(null);
 
-  /** State pushed down to ConfigForm to populate its fields externally */
   const [externalState, setExternalState] = useState<SystemState | null>(null);
+  const { toasts, showToast, dismissToast } = useToast();
 
   /* ── Detection ────────────────────────────────────────── */
 
@@ -97,6 +100,16 @@ export default function Home() {
           onReset={handleReset}
           hasResult={detectionResult !== null}
           externalState={externalState}
+          showToast={showToast}
+        />
+      </div>
+
+      {/* ── Import / Export ─────────────────────────────────── */}
+      <div className="px-4 max-w-5xl mx-auto mt-4">
+        <ImportExport
+          state={systemState}
+          onImport={handleLoadScenario}
+          showToast={showToast}
         />
       </div>
 
@@ -161,6 +174,9 @@ export default function Home() {
 
       {/* ── Footer spacer ───────────────────────────────────── */}
       <div className="pb-20" />
+
+      {/* ── Toast overlay ───────────────────────────────────── */}
+      <Toast toasts={toasts} onDismiss={dismissToast} />
     </main>
   );
 }

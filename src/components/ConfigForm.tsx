@@ -7,11 +7,11 @@ interface ConfigFormProps {
     onDetect: (state: SystemState) => void;
     onReset: () => void;
     hasResult: boolean;
-    /** When set externally (e.g. from SampleLoader or ResolvePanel), populates the form */
     externalState?: SystemState | null;
+    showToast?: (message: string, type: "success" | "error" | "info") => void;
 }
 
-export default function ConfigForm({ onDetect, onReset, hasResult, externalState }: ConfigFormProps) {
+export default function ConfigForm({ onDetect, onReset, hasResult, externalState, showToast }: ConfigFormProps) {
     const [numProcesses, setNumProcesses] = useState<number>(3);
     const [numResources, setNumResources] = useState<number>(3);
 
@@ -20,6 +20,7 @@ export default function ConfigForm({ onDetect, onReset, hasResult, externalState
     const [request, setRequest] = useState<number[][]>([]);
 
     const [tablesGenerated, setTablesGenerated] = useState(false);
+    const [validationErrors, setValidationErrors] = useState<Set<string>>(new Set());
 
     // Track the last loaded external state to avoid infinite loops
     const lastExternalRef = useRef<SystemState | null>(null);
@@ -50,7 +51,40 @@ export default function ConfigForm({ onDetect, onReset, hasResult, externalState
         onReset(); // clear any previous result when tables are regenerated
     };
 
+    const validateInputs = (): boolean => {
+        const errors = new Set<string>();
+
+        if (numProcesses < 1) errors.add("numProcesses");
+        if (numResources < 1) errors.add("numResources");
+
+        for (let j = 0; j < available.length; j++) {
+            if (available[j] < 0 || !Number.isInteger(available[j])) {
+                errors.add(`avail-${j}`);
+            }
+        }
+
+        for (let i = 0; i < allocation.length; i++) {
+            for (let j = 0; j < allocation[i].length; j++) {
+                if (allocation[i][j] < 0 || !Number.isInteger(allocation[i][j])) {
+                    errors.add(`alloc-${i}-${j}`);
+                }
+                if (request[i][j] < 0 || !Number.isInteger(request[i][j])) {
+                    errors.add(`req-${i}-${j}`);
+                }
+            }
+        }
+
+        setValidationErrors(errors);
+        return errors.size === 0;
+    };
+
     const handleDetect = () => {
+        if (!validateInputs()) {
+            showToast?.("Fix invalid inputs (highlighted in red) before detecting.", "error");
+            return;
+        }
+        setValidationErrors(new Set());
+
         const state: SystemState = {
             numProcesses,
             numResources,
@@ -59,6 +93,7 @@ export default function ConfigForm({ onDetect, onReset, hasResult, externalState
             request,
         };
         onDetect(state);
+        showToast?.("Detection complete!", "success");
     };
 
     const handleResetAll = () => {
@@ -213,8 +248,9 @@ export default function ConfigForm({ onDetect, onReset, hasResult, externalState
                                                     onChange={(e) =>
                                                         updateAvailable(i, Math.max(0, Number(e.target.value)))
                                                     }
-                                                    className="w-16 px-2 py-1.5 rounded-md bg-background border border-surface-border text-foreground text-center font-mono
-                                     focus:outline-none focus:ring-2 focus:ring-accent/60 transition-all"
+                                                    className={`w-16 px-2 py-1.5 rounded-md bg-background border text-foreground text-center font-mono
+                                     focus:outline-none focus:ring-2 focus:ring-accent/60 transition-all
+                                     ${validationErrors.has(`avail-${i}`) ? "border-error ring-1 ring-error/40" : "border-surface-border"}`}
                                                 />
                                             </td>
                                         ))}
@@ -231,6 +267,7 @@ export default function ConfigForm({ onDetect, onReset, hasResult, externalState
                         matrix={allocation}
                         idPrefix="alloc"
                         onUpdate={updateAllocation}
+                        validationErrors={validationErrors}
                     />
 
                     {/* --- Request Matrix --- */}
@@ -240,6 +277,7 @@ export default function ConfigForm({ onDetect, onReset, hasResult, externalState
                         matrix={request}
                         idPrefix="req"
                         onUpdate={updateRequest}
+                        validationErrors={validationErrors}
                     />
 
                     {/* --- Action buttons --- */}
@@ -292,12 +330,14 @@ function MatrixTable({
     matrix,
     idPrefix,
     onUpdate,
+    validationErrors,
 }: {
     title: string;
     stepNum: number;
     matrix: number[][];
     idPrefix: string;
     onUpdate: (row: number, col: number, value: number) => void;
+    validationErrors: Set<string>;
 }) {
     if (matrix.length === 0) return null;
 
@@ -344,8 +384,9 @@ function MatrixTable({
                                             onChange={(e) =>
                                                 onUpdate(ri, ci, Math.max(0, Number(e.target.value)))
                                             }
-                                            className="w-16 px-2 py-1.5 rounded-md bg-background border border-surface-border text-foreground text-center font-mono
-                                 focus:outline-none focus:ring-2 focus:ring-accent/60 transition-all"
+                                            className={`w-16 px-2 py-1.5 rounded-md bg-background border text-foreground text-center font-mono
+                                 focus:outline-none focus:ring-2 focus:ring-accent/60 transition-all
+                                 ${validationErrors.has(`${idPrefix}-${ri}-${ci}`) ? "border-error ring-1 ring-error/40" : "border-surface-border"}`}
                                         />
                                     </td>
                                 ))}
