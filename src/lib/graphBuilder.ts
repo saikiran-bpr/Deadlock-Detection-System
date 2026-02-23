@@ -12,64 +12,73 @@ export interface GraphEdge {
     from: string;
     to: string;
     type: "allocation" | "request";
+    weight: number;
 }
 
 /**
  * Build nodes and edges for the Resource Allocation Graph.
- * Processes on the left, resources on the right.
+ *
+ * Layout: bipartite — processes on the left, resources on the right,
+ * with generous vertical spacing.
  */
 export function buildRAGData(state: SystemState): {
     nodes: GraphNode[];
     edges: GraphEdge[];
+    svgWidth: number;
+    svgHeight: number;
 } {
     const { numProcesses, numResources, allocation, request } = state;
     const nodes: GraphNode[] = [];
     const edges: GraphEdge[] = [];
 
-    const svgW = 600;
-    const svgH = Math.max(numProcesses, numResources) * 80 + 80;
+    const verticalGap = 100; // space between nodes vertically
+    const leftX = 100;
+    const rightX = 500;
+    const maxRows = Math.max(numProcesses, numResources);
+    const svgHeight = maxRows * verticalGap + 80;
+    const svgWidth = 600;
 
-    // process nodes — left column
+    // Center each column vertically
+    const processOffsetY = (svgHeight - (numProcesses - 1) * verticalGap) / 2;
+    const resourceOffsetY = (svgHeight - (numResources - 1) * verticalGap) / 2;
+
     for (let i = 0; i < numProcesses; i++) {
-        const spacing = svgH / (numProcesses + 1);
         nodes.push({
             id: `P${i}`,
             label: `P${i}`,
             type: "process",
-            x: 150,
-            y: spacing * (i + 1),
+            x: leftX,
+            y: processOffsetY + i * verticalGap,
         });
     }
 
-    // resource nodes — right column
     for (let j = 0; j < numResources; j++) {
-        const spacing = svgH / (numResources + 1);
         nodes.push({
             id: `R${j}`,
             label: `R${j}`,
             type: "resource",
-            x: 450,
-            y: spacing * (j + 1),
+            x: rightX,
+            y: resourceOffsetY + j * verticalGap,
         });
     }
 
-    // allocation edges: resource → process
+    // Allocation edges: resource → process
     for (let i = 0; i < numProcesses; i++) {
         for (let j = 0; j < numResources; j++) {
             if (allocation[i][j] > 0) {
-                edges.push({ from: `R${j}`, to: `P${i}`, type: "allocation" });
+                edges.push({ from: `R${j}`, to: `P${i}`, type: "allocation", weight: allocation[i][j] });
             }
         }
     }
 
-    // request edges: process → resource
+    // Request edges: process → resource
     for (let i = 0; i < numProcesses; i++) {
         for (let j = 0; j < numResources; j++) {
             if (request[i][j] > 0) {
-                edges.push({ from: `P${i}`, to: `R${j}`, type: "request" });
+                edges.push({ from: `P${i}`, to: `R${j}`, type: "request", weight: request[i][j] });
             }
         }
     }
 
-    return { nodes, edges };
+    return { nodes, edges, svgWidth, svgHeight };
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { SystemState, DetectionResult, StepInfo, ResolveResult } from "@/types";
+import { SystemState, DetectionResult, StepInfo } from "@/types";
 import { detectDeadlock, detectMultiInstanceStepByStep } from "@/lib/deadlockDetector";
 import ConfigForm from "@/components/ConfigForm";
 import ResultDisplay from "@/components/ResultDisplay";
@@ -9,9 +9,9 @@ import RAGGraph, { StepState } from "@/components/RAGGraph";
 import SummaryTable from "@/components/SummaryTable";
 import StepByStep from "@/components/StepByStep";
 import SampleLoader from "@/components/SampleLoader";
-import ResolvePanel from "@/components/ResolvePanel";
+
 import ImportExport from "@/components/ImportExport";
-import SimulateRequest from "@/components/SimulateRequest";
+
 import Toast from "@/components/Toast";
 import Navbar from "@/components/Navbar";
 import FadeInSection from "@/components/FadeInSection";
@@ -67,17 +67,7 @@ export default function Home() {
     setStepState(null);
   };
 
-  /* ── Deadlock resolution ──────────────────────────────── */
 
-  const handleResolved = (resolve: ResolveResult) => {
-    // Update everything with the new (post-resolution) state
-    setSystemState(resolve.newState);
-    setDetectionResult(resolve.newResult);
-    setSteps(detectMultiInstanceStepByStep(resolve.newState));
-    setStepState(null);
-    // Also push the new state into ConfigForm so the tables update
-    setExternalState(resolve.newState);
-  };
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -141,44 +131,27 @@ export default function Home() {
             {/* Result banner */}
             <ResultDisplay result={detectionResult} />
 
-            {/* Resolve panel (only shown on deadlock) */}
-            {detectionResult.isDeadlocked && (
-              <ResolvePanel
-                state={systemState}
-                result={detectionResult}
-                onResolved={handleResolved}
-              />
-            )}
 
-            {/* Simulate Request Section */}
-            <div className="pt-4">
-              <SimulateRequest state={systemState} />
+
+            {/* RAG Graph — full width */}
+            <div className="w-full bg-surface/30 backdrop-blur-sm border border-surface-border rounded-2xl p-6 shadow-xl">
+              <RAGGraph
+                state={systemState}
+                detectionResult={detectionResult}
+                stepState={stepState}
+              />
             </div>
 
-            {/* Graph (left) + Summary Table (right) */}
-            <div className="flex flex-col lg:flex-row gap-8 items-start">
-              {/* RAG Graph */}
-              <div className="flex-1 min-w-0 w-full bg-surface/30 backdrop-blur-sm border border-surface-border rounded-2xl p-6 shadow-xl">
-                <RAGGraph
-                  state={systemState}
-                  detectionResult={detectionResult}
-                  stepState={stepState}
-                />
-              </div>
-
-              {/* Summary Table */}
-              <div className="flex-1 min-w-0">
-                <div className="bg-surface/60 backdrop-blur-md border border-surface-border rounded-2xl p-6 shadow-xl space-y-4">
-                  <h2 className="text-xl font-semibold tracking-tight">
-                    Process Summary
-                  </h2>
-                  <SummaryTable
-                    state={systemState}
-                    result={detectionResult}
-                    stepState={stepState}
-                  />
-                </div>
-              </div>
+            {/* Summary Table — full width below */}
+            <div className="w-full bg-surface/60 backdrop-blur-md border border-surface-border rounded-2xl p-6 shadow-xl space-y-4">
+              <h2 className="text-xl font-semibold tracking-tight">
+                Process Summary
+              </h2>
+              <SummaryTable
+                state={systemState}
+                result={detectionResult}
+                stepState={stepState}
+              />
             </div>
 
             {/* Step By Step Visualization */}

@@ -44,7 +44,7 @@ export default function Navbar() {
                 <div className="flex items-center justify-between h-16">
                     <div className="flex items-center">
                         <a href="#home" className="flex-shrink-0">
-                            <span className="text-xl font-bold text-accent tracking-widest uppercase">Detect<span className="text-foreground">OS</span></span>
+                            <span className="text-xl font-bold text-accent tracking-widest uppercase">D-4 <span className="text-foreground">DEADLOCK</span></span>
                         </a>
                     </div>
 
