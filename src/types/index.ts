@@ -32,3 +32,10 @@ export interface ResolveResult {
     victimProcess: number;
     message: string;
 }
+
+/** Result returned by simulating a request */
+export interface SimulateRequestResult {
+    granted: boolean;
+    isSafe: boolean;
+    message: string;
+}

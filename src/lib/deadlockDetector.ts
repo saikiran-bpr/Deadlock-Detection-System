@@ -1,4 +1,4 @@
-import { SystemState, DetectionResult, StepInfo, ResolveResult } from "@/types";
+import { SystemState, DetectionResult, StepInfo, ResolveResult, SimulateRequestResult } from "@/types";
 
 /**
  * Build a wait-for graph for single-instance resources.
@@ -325,3 +325,60 @@ export function resolveDeadlock(
     return { newState, newResult, victimProcess: victim, message };
 }
 
+/**
+ * Simulate a resource request to avoid deadlock (Banker's Resource-Request Algorithm).
+ * Copies state, simulates granting the request, and checks if the resulting state is safe.
+ * Does NOT modify the original state.
+ */
+export function simulateRequest(
+    state: SystemState,
+    processIdx: number,
+    resourceIdx: number,
+    amount: number
+): SimulateRequestResult {
+    // Basic validations
+    if (amount <= 0) {
+        return { granted: false, isSafe: false, message: "Request amount must be greater than 0." };
+    }
+    if (amount > state.request[processIdx][resourceIdx]) {
+        return { granted: false, isSafe: false, message: `P${processIdx} has exceeded its maximum claim for R${resourceIdx}.` };
+    }
+    if (amount > state.available[resourceIdx]) {
+        return { granted: false, isSafe: false, message: `Resources not available. P${processIdx} must wait.` };
+    }
+
+    // Deep copy state to simulate
+    const newAvailable = [...state.available];
+    const newAllocation = state.allocation.map((r) => [...r]);
+    const newRequest = state.request.map((r) => [...r]);
+
+    // Simulate granting
+    newAvailable[resourceIdx] -= amount;
+    newAllocation[processIdx][resourceIdx] += amount;
+    newRequest[processIdx][resourceIdx] -= amount;
+
+    const simulatedState: SystemState = {
+        numProcesses: state.numProcesses,
+        numResources: state.numResources,
+        available: newAvailable,
+        allocation: newAllocation,
+        request: newRequest,
+    };
+
+    // Check safety
+    const result = detectDeadlock(simulatedState);
+
+    if (result.isDeadlocked) {
+        return {
+            granted: false,
+            isSafe: false,
+            message: `Request BLOCKED! Granting ${amount} instances of R${resourceIdx} to P${processIdx} would lead to an unsafe state.`,
+        };
+    }
+
+    return {
+        granted: true,
+        isSafe: true,
+        message: `Request GRANTED! State remains safe.`,
+    };
+}

@@ -11,6 +11,7 @@ import StepByStep from "@/components/StepByStep";
 import SampleLoader from "@/components/SampleLoader";
 import ResolvePanel from "@/components/ResolvePanel";
 import ImportExport from "@/components/ImportExport";
+import SimulateRequest from "@/components/SimulateRequest";
 import Toast from "@/components/Toast";
 import { useToast } from "@/hooks/useToast";
 
@@ -136,6 +137,11 @@ export default function Home() {
               onResolved={handleResolved}
             />
           )}
+
+          {/* Simulate Request Section */}
+          <div className="pt-4">
+            <SimulateRequest state={systemState} />
+          </div>
 
           {/* Graph (left) + Summary Table (right) */}
           <div className="flex flex-col lg:flex-row gap-8">
