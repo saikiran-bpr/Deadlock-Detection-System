@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import ThemeToggle from "./ThemeToggle";
 
 const navLinks = [
     { name: "Home", href: "#home" },
@@ -48,29 +49,33 @@ export default function Navbar() {
                     </div>
 
                     {/* Desktop Nav */}
-                    <div className="hidden md:block">
+                    <div className="hidden md:flex items-center">
                         <div className="ml-10 flex items-baseline space-x-4">
                             {navLinks.map((link) => (
                                 <a
                                     key={link.name}
                                     href={link.href}
                                     className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeHash === link.href
-                                            ? "bg-accent/10 text-accent"
-                                            : "text-foreground/70 hover:bg-surface hover:text-foreground"
+                                        ? "bg-accent/10 text-accent"
+                                        : "text-foreground/70 hover:bg-surface hover:text-foreground"
                                         }`}
                                 >
                                     {link.name}
                                 </a>
                             ))}
                         </div>
+                        <div className="ml-4 pl-4 border-l border-surface-border">
+                            <ThemeToggle />
+                        </div>
                     </div>
 
                     {/* Mobile Nav Toggle */}
-                    <div className="md:hidden">
+                    <div className="flex items-center md:hidden gap-1">
+                        <ThemeToggle />
                         <button
                             onClick={() => setIsOpen(!isOpen)}
                             type="button"
-                            className="inline-flex items-center justify-center p-2 rounded-md text-foreground/70 hover:text-foreground hover:bg-surface focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent"
+                            className="inline-flex items-center justify-center p-2 rounded-md text-foreground/70 hover:text-foreground hover:bg-surface focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent ml-2"
                             aria-controls="mobile-menu"
                             aria-expanded={isOpen}
                         >
@@ -99,8 +104,8 @@ export default function Navbar() {
                                 href={link.href}
                                 onClick={() => setIsOpen(false)}
                                 className={`block px-3 py-2 rounded-md text-base font-medium ${activeHash === link.href
-                                        ? "bg-accent/10 text-accent"
-                                        : "text-foreground/70 hover:bg-surface hover:text-foreground"
+                                    ? "bg-accent/10 text-accent"
+                                    : "text-foreground/70 hover:bg-surface hover:text-foreground"
                                     }`}
                             >
                                 {link.name}

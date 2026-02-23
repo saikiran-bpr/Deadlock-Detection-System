@@ -203,7 +203,7 @@ export default function ConfigForm({ onDetect, onReset, hasResult, externalState
                         id="generateTablesBtn"
                         onClick={handleGenerateTables}
                         className="px-6 py-2.5 rounded-lg bg-accent hover:bg-accent-hover text-foreground font-medium text-sm
-                       transition-all active:scale-95 shadow-lg shadow-accent/20 cursor-pointer"
+                       transition-all active:scale-95 shadow-lg shadow-accent/20 cursor-pointer btn-glow"
                     >
                         Generate Tables
                     </button>
@@ -287,7 +287,7 @@ export default function ConfigForm({ onDetect, onReset, hasResult, externalState
                             onClick={handleDetect}
                             className="px-8 py-3 rounded-lg bg-accent hover:bg-accent-hover text-foreground font-semibold text-base
                          transition-all active:scale-95 shadow-lg shadow-accent/25 cursor-pointer
-                         flex items-center gap-2"
+                         flex items-center gap-2 btn-glow"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />

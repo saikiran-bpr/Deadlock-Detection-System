@@ -14,6 +14,7 @@ import ImportExport from "@/components/ImportExport";
 import SimulateRequest from "@/components/SimulateRequest";
 import Toast from "@/components/Toast";
 import Navbar from "@/components/Navbar";
+import FadeInSection from "@/components/FadeInSection";
 import { useToast } from "@/hooks/useToast";
 
 export default function Home() {
@@ -83,107 +84,115 @@ export default function Home() {
       <Navbar />
 
       {/* ── Hero header & Scenarios ─────────────────────────── */}
-      <section id="home" className="pt-16 pb-12 max-w-7xl mx-auto space-y-10">
-        <header className="text-center space-y-3 px-4">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-accent">
-            Deadlock Detection System
-          </h1>
-          <p className="text-lg md:text-xl text-foreground/60 font-light">
-            OS Mini Project — Resource Allocation Graph &amp; Deadlock Detection
-          </p>
-        </header>
+      <FadeInSection>
+        <section id="home" className="pt-16 pb-12 max-w-7xl mx-auto space-y-10">
+          <header className="text-center space-y-3 px-4">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-accent animate-fade-in-up">
+              Deadlock Detection System
+            </h1>
+            <p className="text-lg md:text-xl text-foreground/60 font-light animate-fade-in-up" style={{ animationDelay: "100ms" }}>
+              OS Mini Project — Resource Allocation Graph &amp; Deadlock Detection
+            </p>
+          </header>
 
-        <div className="px-4 max-w-5xl mx-auto">
-          <SampleLoader onLoad={handleLoadScenario} />
-        </div>
-      </section>
+          <div className="px-4 max-w-5xl mx-auto animate-fade-in-up" style={{ animationDelay: "200ms" }}>
+            <SampleLoader onLoad={handleLoadScenario} />
+          </div>
+        </section>
+      </FadeInSection>
 
       {/* ── Config form (top) ───────────────────────────────── */}
-      <section id="config" className="py-12 px-4 max-w-7xl mx-auto space-y-8">
-        <div className="bg-surface/30 backdrop-blur-sm border border-surface-border rounded-2xl p-6 md:p-8 shadow-xl">
-          <ConfigForm
-            onDetect={handleDetect}
-            onReset={handleReset}
-            hasResult={detectionResult !== null}
-            externalState={externalState}
-            showToast={showToast}
-          />
-        </div>
+      <FadeInSection delay="100ms">
+        <section id="config" className="py-12 px-4 max-w-7xl mx-auto space-y-8">
+          <div className="bg-surface/30 backdrop-blur-sm border border-surface-border rounded-2xl p-6 md:p-8 shadow-xl">
+            <ConfigForm
+              onDetect={handleDetect}
+              onReset={handleReset}
+              hasResult={detectionResult !== null}
+              externalState={externalState}
+              showToast={showToast}
+            />
+          </div>
 
-        {/* ── Import / Export ─────────────────────────────────── */}
-        <div className="max-w-5xl mx-auto">
-          <ImportExport
-            state={systemState}
-            onImport={handleLoadScenario}
-            showToast={showToast}
-          />
-        </div>
-      </section>
+          {/* ── Import / Export ─────────────────────────────────── */}
+          <div className="max-w-5xl mx-auto">
+            <ImportExport
+              state={systemState}
+              onImport={handleLoadScenario}
+              showToast={showToast}
+            />
+          </div>
+        </section>
+      </FadeInSection>
 
       {/* ── Detection Results ───────────────────────────────── */}
       {detectionResult && systemState && (
-        <section id="detection" className="py-12 px-4 max-w-7xl mx-auto space-y-10 animate-[fadeSlideIn_0.4s_ease-out]">
-          {/* Section heading */}
-          <div className="flex items-center gap-3 w-full max-w-5xl mx-auto">
-            <div className="h-px flex-1 bg-surface-border" />
-            <h2 className="text-lg font-semibold text-foreground/60 tracking-wide uppercase">
-              Detection Results
-            </h2>
-            <div className="h-px flex-1 bg-surface-border" />
-          </div>
-
-          {/* Result banner */}
-          <ResultDisplay result={detectionResult} />
-
-          {/* Resolve panel (only shown on deadlock) */}
-          {detectionResult.isDeadlocked && (
-            <ResolvePanel
-              state={systemState}
-              result={detectionResult}
-              onResolved={handleResolved}
-            />
-          )}
-
-          {/* Simulate Request Section */}
-          <div className="pt-4">
-            <SimulateRequest state={systemState} />
-          </div>
-
-          {/* Graph (left) + Summary Table (right) */}
-          <div className="flex flex-col lg:flex-row gap-8 items-start">
-            {/* RAG Graph */}
-            <div className="flex-1 min-w-0 w-full bg-surface/30 backdrop-blur-sm border border-surface-border rounded-2xl p-6 shadow-xl">
-              <RAGGraph
-                state={systemState}
-                detectionResult={detectionResult}
-                stepState={stepState}
-              />
+        <FadeInSection>
+          <section id="detection" className="py-12 px-4 max-w-7xl mx-auto space-y-10">
+            {/* Section heading */}
+            <div className="flex items-center gap-3 w-full max-w-5xl mx-auto">
+              <div className="h-px flex-1 bg-surface-border" />
+              <h2 className="text-lg font-semibold text-foreground/60 tracking-wide uppercase">
+                Detection Results
+              </h2>
+              <div className="h-px flex-1 bg-surface-border" />
             </div>
 
-            {/* Summary Table */}
-            <div className="flex-1 min-w-0">
-              <div className="bg-surface/60 backdrop-blur-md border border-surface-border rounded-2xl p-6 shadow-xl space-y-4">
-                <h2 className="text-xl font-semibold tracking-tight">
-                  Process Summary
-                </h2>
-                <SummaryTable
+            {/* Result banner */}
+            <ResultDisplay result={detectionResult} />
+
+            {/* Resolve panel (only shown on deadlock) */}
+            {detectionResult.isDeadlocked && (
+              <ResolvePanel
+                state={systemState}
+                result={detectionResult}
+                onResolved={handleResolved}
+              />
+            )}
+
+            {/* Simulate Request Section */}
+            <div className="pt-4">
+              <SimulateRequest state={systemState} />
+            </div>
+
+            {/* Graph (left) + Summary Table (right) */}
+            <div className="flex flex-col lg:flex-row gap-8 items-start">
+              {/* RAG Graph */}
+              <div className="flex-1 min-w-0 w-full bg-surface/30 backdrop-blur-sm border border-surface-border rounded-2xl p-6 shadow-xl">
+                <RAGGraph
                   state={systemState}
-                  result={detectionResult}
+                  detectionResult={detectionResult}
                   stepState={stepState}
                 />
               </div>
-            </div>
-          </div>
 
-          {/* Step By Step Visualization */}
-          {steps && steps.length > 0 && (
-            <section id="step-by-step" className="pt-16 pb-12 animate-[fadeSlideIn_0.4s_ease-out_0.2s] fill-mode-both">
-              <div className="bg-surface/30 backdrop-blur-sm border border-surface-border rounded-2xl p-6 md:p-8 shadow-xl">
-                <StepByStep steps={steps} onStepChange={handleStepChange} />
+              {/* Summary Table */}
+              <div className="flex-1 min-w-0">
+                <div className="bg-surface/60 backdrop-blur-md border border-surface-border rounded-2xl p-6 shadow-xl space-y-4">
+                  <h2 className="text-xl font-semibold tracking-tight">
+                    Process Summary
+                  </h2>
+                  <SummaryTable
+                    state={systemState}
+                    result={detectionResult}
+                    stepState={stepState}
+                  />
+                </div>
               </div>
-            </section>
-          )}
-        </section>
+            </div>
+
+            {/* Step By Step Visualization */}
+            {steps && steps.length > 0 && (
+              <FadeInSection delay="100ms">
+                <section id="step-by-step" className="pt-16 pb-12">
+                  <div className="bg-surface/30 backdrop-blur-sm border border-surface-border rounded-2xl p-6 md:p-8 shadow-xl">
+                    <StepByStep steps={steps} onStepChange={handleStepChange} />
+                  </div>
+                </section>
+              </FadeInSection>
+            )}
+          </section>
+        </FadeInSection>
       )}
 
       {/* ── Footer spacer ───────────────────────────────────── */}
