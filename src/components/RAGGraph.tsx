@@ -18,6 +18,19 @@ interface RAGGraphProps {
 export default function RAGGraph({ state, detectionResult, stepState }: RAGGraphProps) {
     const { nodes, edges, svgWidth, svgHeight } = useMemo(() => buildRAGData(state), [state]);
 
+    // Compute total instances per resource: available[j] + sum(allocation[i][j])
+    const totalInstances = useMemo(() => {
+        const totals: number[] = [];
+        for (let j = 0; j < state.numResources; j++) {
+            let sum = state.available[j];
+            for (let i = 0; i < state.numProcesses; i++) {
+                sum += state.allocation[i][j];
+            }
+            totals.push(sum);
+        }
+        return totals;
+    }, [state]);
+
     const nodeMap = useMemo(() => {
         const m = new Map<string, GraphNode>();
         nodes.forEach((n) => m.set(n.id, n));
@@ -95,9 +108,8 @@ export default function RAGGraph({ state, detectionResult, stepState }: RAGGraph
         // Offset amount: spread pairs by 12px each, centered
         const spreadAmount = offset * 12;
 
-        // Shorten line to stop at node border
-        const fromR = from.type === "process" ? 28 : 26;
-        const toR = to.type === "process" ? 28 : 26;
+        const fromR = from.type === "process" ? 28 : 30;
+        const toR = to.type === "process" ? 32 : 36;
 
         const startRatio = fromR / dist;
         const endRatio = toR / dist;
@@ -116,8 +128,6 @@ export default function RAGGraph({ state, detectionResult, stepState }: RAGGraph
     /* ── Render ───────────────────────────────────────── */
 
     const processR = 28;
-    const resW = 56;
-    const resH = 40;
 
     return (
         <div className="space-y-4">
@@ -207,14 +217,35 @@ export default function RAGGraph({ state, detectionResult, stepState }: RAGGraph
                         );
                     }
 
+                    const rIdx = parseInt(node.id.slice(1));
+                    const count = Math.max(1, totalInstances[rIdx] || 1);
+                    const resW = Math.max(56, count * 20);
+                    const resH = 40;
+                    const cellW = resW / count;
+                    // Left-align all resource boxes so they start exactly 28px left of their central anchor point
+                    const startX = node.x - 28;
+                    const startY = node.y - resH / 2;
+
                     return (
                         <g key={node.id} opacity={opacity}>
+                            {/* Main Box */}
                             <rect
-                                x={node.x - resW / 2} y={node.y - resH / 2}
-                                width={resW} height={resH} rx={8}
+                                x={startX} y={startY}
+                                width={resW} height={resH} rx={4}
                                 fill="var(--color-surface)" stroke="#facc15" strokeWidth={2.5}
                             />
-                            <text x={node.x} y={node.y}
+                            {/* Partitions */}
+                            {count > 1 && Array.from({ length: count - 1 }).map((_, i) => (
+                                <line
+                                    key={`part-${i}`}
+                                    x1={startX + (i + 1) * cellW} y1={startY}
+                                    x2={startX + (i + 1) * cellW} y2={startY + resH}
+                                    stroke="#facc15" strokeWidth={1.5} strokeDasharray="3 3"
+                                    opacity={0.6}
+                                />
+                            ))}
+                            {/* Resource label (outside, top, centered on the first fixed cell) */}
+                            <text x={node.x} y={node.y - resH / 2 - 14}
                                 textAnchor="middle" dominantBaseline="central"
                                 fill="var(--color-foreground)" fontSize={14} fontWeight={700}>
                                 {node.label}
