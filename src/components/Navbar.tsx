@@ -7,6 +7,8 @@ const navLinks = [
     { name: "Home", href: "#home" },
     { name: "Configuration", href: "#config" },
     { name: "Detection", href: "#detection" },
+    { name: "Analytics", href: "#analytics" },
+    { name: "Prevention", href: "#prevention" },
     { name: "Step-by-Step", href: "#step-by-step" },
 ];
 
@@ -14,7 +16,6 @@ export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const [activeHash, setActiveHash] = useState("#home");
 
-    // Track active section via IntersectionObserver or simple hash tracking
     useEffect(() => {
         const handleScroll = () => {
             const sections = navLinks.map(link => link.href.substring(1));
@@ -24,7 +25,6 @@ export default function Navbar() {
                 const element = document.getElementById(section);
                 if (element) {
                     const rect = element.getBoundingClientRect();
-                    // Adjust threshold if needed to trigger earlier/later when scrolling
                     if (rect.top <= 120) {
                         current = "#" + section;
                     }
@@ -34,7 +34,7 @@ export default function Navbar() {
         };
 
         window.addEventListener("scroll", handleScroll);
-        handleScroll(); // initialize
+        handleScroll();
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
@@ -48,9 +48,8 @@ export default function Navbar() {
                         </a>
                     </div>
 
-                    {/* Desktop Nav */}
                     <div className="hidden md:flex items-center">
-                        <div className="ml-10 flex items-baseline space-x-4">
+                        <div className="ml-10 flex items-baseline space-x-1">
                             {navLinks.map((link) => (
                                 <a
                                     key={link.name}
@@ -69,7 +68,6 @@ export default function Navbar() {
                         </div>
                     </div>
 
-                    {/* Mobile Nav Toggle */}
                     <div className="flex items-center md:hidden gap-1">
                         <ThemeToggle />
                         <button
@@ -94,7 +92,6 @@ export default function Navbar() {
                 </div>
             </div>
 
-            {/* Mobile Menu */}
             {isOpen && (
                 <div className="md:hidden bg-surface/95 backdrop-blur-md border-b border-surface-border animate-[fadeSlideIn_0.2s_ease-out]" id="mobile-menu">
                     <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">

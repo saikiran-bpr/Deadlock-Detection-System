@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { StepInfo } from "@/types";
 
 interface StepByStepProps {
@@ -10,8 +10,10 @@ interface StepByStepProps {
 
 export default function StepByStep({ steps, onStepChange }: StepByStepProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [speed, setSpeed] = useState(1500);
+    const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-    // emit step state to parent whenever step changes
     useEffect(() => {
         if (steps && steps.length > 0) {
             const step = steps[currentIndex];
@@ -19,10 +21,36 @@ export default function StepByStep({ steps, onStepChange }: StepByStepProps) {
         }
     }, [currentIndex, steps, onStepChange]);
 
+    useEffect(() => {
+        if (isPlaying) {
+            intervalRef.current = setInterval(() => {
+                setCurrentIndex((prev) => {
+                    if (prev >= steps.length - 1) {
+                        setIsPlaying(false);
+                        return prev;
+                    }
+                    return prev + 1;
+                });
+            }, speed);
+        }
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+        };
+    }, [isPlaying, speed, steps.length]);
+
     if (!steps || steps.length === 0) return null;
 
     const currentStep = steps[currentIndex];
     const progress = ((currentIndex + 1) / steps.length) * 100;
+
+    const togglePlay = () => {
+        if (currentIndex >= steps.length - 1) {
+            setCurrentIndex(0);
+            setIsPlaying(true);
+        } else {
+            setIsPlaying(!isPlaying);
+        }
+    };
 
     return (
         <div className="bg-surface/80 backdrop-blur-md border border-surface-border rounded-xl shadow-xl overflow-hidden p-6 lg:p-8 space-y-6">
@@ -33,11 +61,14 @@ export default function StepByStep({ steps, onStepChange }: StepByStepProps) {
                 </span>
             </div>
 
-            <div className="w-full bg-surface-border rounded-full h-2.5 overflow-hidden">
+            <div className="w-full bg-surface-border rounded-full h-2.5 overflow-hidden relative">
                 <div
                     className="bg-accent h-full rounded-full transition-all duration-300 ease-out"
                     style={{ width: `${progress}%` }}
                 />
+                {isPlaying && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shimmer_1.5s_infinite]" />
+                )}
             </div>
 
             <div className="bg-background/80 border border-surface-border p-5 rounded-lg">
@@ -57,8 +88,8 @@ export default function StepByStep({ steps, onStepChange }: StepByStepProps) {
                         {currentStep.finish.map((f, i) => (
                             <span
                                 key={i}
-                                className={`flex items-center justify-center w-8 h-8 rounded text-sm ${f
-                                    ? "bg-success/20 text-success border border-success/30"
+                                className={`flex items-center justify-center w-8 h-8 rounded text-sm transition-all duration-300 ${f
+                                    ? "bg-success/20 text-success border border-success/30 scale-110"
                                     : "bg-error/20 text-error border border-error/30"
                                     }`}
                             >
@@ -87,21 +118,70 @@ export default function StepByStep({ steps, onStepChange }: StepByStepProps) {
                 </div>
             )}
 
-            <div className="flex flex-wrap gap-3 justify-between pt-6 border-t border-surface-border">
-                <button
-                    onClick={() => setCurrentIndex(0)}
-                    className="px-5 py-2.5 text-sm font-medium hover:bg-surface-border rounded-lg transition-colors border border-surface-border"
-                    disabled={currentIndex === 0}
-                >
-                    Reset
-                </button>
+            <div className="flex flex-wrap gap-3 justify-between pt-6 border-t border-surface-border items-center">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={togglePlay}
+                        className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all flex items-center gap-2 shadow-sm ${
+                            isPlaying
+                                ? "bg-error/80 hover:bg-error text-white"
+                                : "bg-accent hover:bg-accent-hover text-foreground"
+                        }`}
+                    >
+                        {isPlaying ? (
+                            <>
+                                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+                                    <rect x="2" y="1" width="4" height="12" rx="1" />
+                                    <rect x="8" y="1" width="4" height="12" rx="1" />
+                                </svg>
+                                Pause
+                            </>
+                        ) : (
+                            <>
+                                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+                                    <polygon points="2,0 14,7 2,14" />
+                                </svg>
+                                {currentIndex >= steps.length - 1 ? "Replay" : "Auto-Play"}
+                            </>
+                        )}
+                    </button>
+
+                    <div className="flex items-center gap-2 bg-background/50 border border-surface-border rounded-lg px-3 py-1.5">
+                        <span className="text-xs text-foreground/50">Speed:</span>
+                        <button
+                            onClick={() => setSpeed(2500)}
+                            className={`px-2 py-0.5 rounded text-xs font-mono ${speed === 2500 ? "bg-accent/20 text-accent" : "text-foreground/50 hover:text-foreground"}`}
+                        >
+                            0.5x
+                        </button>
+                        <button
+                            onClick={() => setSpeed(1500)}
+                            className={`px-2 py-0.5 rounded text-xs font-mono ${speed === 1500 ? "bg-accent/20 text-accent" : "text-foreground/50 hover:text-foreground"}`}
+                        >
+                            1x
+                        </button>
+                        <button
+                            onClick={() => setSpeed(800)}
+                            className={`px-2 py-0.5 rounded text-xs font-mono ${speed === 800 ? "bg-accent/20 text-accent" : "text-foreground/50 hover:text-foreground"}`}
+                        >
+                            2x
+                        </button>
+                        <button
+                            onClick={() => setSpeed(400)}
+                            className={`px-2 py-0.5 rounded text-xs font-mono ${speed === 400 ? "bg-accent/20 text-accent" : "text-foreground/50 hover:text-foreground"}`}
+                        >
+                            4x
+                        </button>
+                    </div>
+                </div>
+
                 <div className="flex gap-3">
                     <button
-                        onClick={() => setCurrentIndex(0)}
+                        onClick={() => { setCurrentIndex(0); setIsPlaying(false); }}
                         className="px-5 py-2.5 text-sm font-medium hover:bg-surface-border rounded-lg transition-colors border border-surface-border"
                         disabled={currentIndex === 0}
                     >
-                        Start
+                        Reset
                     </button>
                     <button
                         onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}

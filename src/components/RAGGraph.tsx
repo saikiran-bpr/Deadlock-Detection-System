@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { SystemState, DetectionResult } from "@/types";
 import { buildRAGData, GraphNode, GraphEdge } from "@/lib/graphBuilder";
 
@@ -17,8 +17,8 @@ interface RAGGraphProps {
 
 export default function RAGGraph({ state, detectionResult, stepState }: RAGGraphProps) {
     const { nodes, edges, svgWidth, svgHeight } = useMemo(() => buildRAGData(state), [state]);
+    const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
-    // Compute total instances per resource: available[j] + sum(allocation[i][j])
     const totalInstances = useMemo(() => {
         const totals: number[] = [];
         for (let j = 0; j < state.numResources; j++) {
@@ -43,9 +43,7 @@ export default function RAGGraph({ state, detectionResult, stepState }: RAGGraph
             : []
     );
 
-    /* ── Build edge offset map to spread parallel edges ── */
     const edgeOffsets = useMemo(() => {
-        // Group edges by their unordered node pair
         const pairCount = new Map<string, number>();
         const offsets = new Map<number, number>();
 
@@ -60,7 +58,16 @@ export default function RAGGraph({ state, detectionResult, stepState }: RAGGraph
         return offsets;
     }, [edges]);
 
-    /* ── Node styling ──────────────────────────────────── */
+    const connectedToHovered = useMemo(() => {
+        if (!hoveredNode) return new Set<string>();
+        const connected = new Set<string>();
+        connected.add(hoveredNode);
+        edges.forEach((edge) => {
+            if (edge.from === hoveredNode) connected.add(edge.to);
+            if (edge.to === hoveredNode) connected.add(edge.from);
+        });
+        return connected;
+    }, [hoveredNode, edges]);
 
     const getProcessStyle = (id: string) => {
         const idx = parseInt(id.slice(1));
@@ -78,10 +85,15 @@ export default function RAGGraph({ state, detectionResult, stepState }: RAGGraph
             return { fill: "#450a0a", stroke: "#ef4444", strokeWidth: 3, glow: "rag-node-deadlocked" };
         }
 
+        if (hoveredNode && !connectedToHovered.has(id)) {
+            return { fill: "var(--color-surface)", stroke: "#38bdf8", strokeWidth: 2.5, glow: "rag-node-dimmed" };
+        }
+
         return { fill: "var(--color-surface)", stroke: "#38bdf8", strokeWidth: 2.5, glow: "" };
     };
 
     const getNodeOpacity = (id: string) => {
+        if (hoveredNode && !connectedToHovered.has(id)) return 0.25;
         if (!stepState) return 1;
         const idx = parseInt(id.slice(1));
         if (id.startsWith("P") && stepState.finishedProcesses[idx]) return 0.3;
@@ -94,18 +106,20 @@ export default function RAGGraph({ state, detectionResult, stepState }: RAGGraph
         return deadlockedSet.has(processEnd);
     };
 
-    /* ── Edge path builder (straight with perpendicular offset for parallel edges) ── */
+    const getEdgeOpacity = (edge: GraphEdge) => {
+        if (!hoveredNode) return 0.8;
+        if (connectedToHovered.has(edge.from) && connectedToHovered.has(edge.to)) return 1;
+        return 0.1;
+    };
 
     const buildEdgePath = (from: GraphNode, to: GraphNode, offset: number) => {
         const dx = to.x - from.x;
         const dy = to.y - from.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Unit perpendicular vector
         const perpX = -dy / dist;
         const perpY = dx / dist;
 
-        // Offset amount: spread pairs by 12px each, centered
         const spreadAmount = offset * 12;
 
         const fromR = from.type === "process" ? 28 : 30;
@@ -125,28 +139,18 @@ export default function RAGGraph({ state, detectionResult, stepState }: RAGGraph
         return { x1, y1, x2, y2, midX, midY };
     };
 
-    /* ── Render ───────────────────────────────────────── */
-
     const processR = 28;
 
     return (
         <div className="space-y-4">
-            <h2 className="text-xl font-semibold tracking-tight">
-                Resource Allocation Graph
-            </h2>
-
-            <style>{`
-                @keyframes pulse-red {
-                    0%, 100% { filter: drop-shadow(0 0 4px #ef4444); }
-                    50% { filter: drop-shadow(0 0 14px #ef4444); }
-                }
-                .rag-node-deadlocked { animation: pulse-red 1.5s ease-in-out infinite; }
-                @keyframes glow-cyan {
-                    0%, 100% { filter: drop-shadow(0 0 4px #22d3ee); }
-                    50% { filter: drop-shadow(0 0 12px #22d3ee); }
-                }
-                .rag-node-current { animation: glow-cyan 1.2s ease-in-out infinite; }
-            `}</style>
+            <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold tracking-tight">
+                    Resource Allocation Graph
+                </h2>
+                <span className="text-xs text-foreground/40 font-mono">
+                    {nodes.length} nodes | {edges.length} edges
+                </span>
+            </div>
 
             <svg
                 viewBox={`0 0 ${svgWidth} ${svgHeight}`}
@@ -164,13 +168,25 @@ export default function RAGGraph({ state, detectionResult, stepState }: RAGGraph
                     <marker id="arrow-deadlock" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse">
                         <polygon points="0 0, 10 4, 0 8" fill="#ef4444" />
                     </marker>
+                    <filter id="glow-blue">
+                        <feGaussianBlur stdDeviation="2" result="blur" />
+                        <feMerge>
+                            <feMergeNode in="blur" />
+                            <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                    </filter>
+                    <filter id="glow-red">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feMerge>
+                            <feMergeNode in="blur" />
+                            <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                    </filter>
                 </defs>
 
-                {/* Column labels */}
                 <text x={100} y={24} textAnchor="middle" fill="var(--color-foreground)" fontSize={14} fontWeight={600} opacity={0.5}>PROCESSES</text>
                 <text x={500} y={24} textAnchor="middle" fill="var(--color-foreground)" fontSize={14} fontWeight={600} opacity={0.5}>RESOURCES</text>
 
-                {/* Edges */}
                 {edges.map((edge, idx) => {
                     const from = nodeMap.get(edge.from);
                     const to = nodeMap.get(edge.to);
@@ -179,7 +195,7 @@ export default function RAGGraph({ state, detectionResult, stepState }: RAGGraph
                     const isAlloc = edge.type === "allocation";
                     const inCycle = isDeadlockEdge(edge);
                     const offset = edgeOffsets.get(idx) || 0;
-                    const { x1, y1, x2, y2, midX, midY } = buildEdgePath(from, to, offset);
+                    const { x1, y1, x2, y2 } = buildEdgePath(from, to, offset);
 
                     const color = inCycle ? "#ef4444" : isAlloc ? "#38bdf8" : "#fb923c";
                     const markerId = inCycle ? "arrow-deadlock" : isAlloc ? "arrow-alloc" : "arrow-req";
@@ -192,22 +208,49 @@ export default function RAGGraph({ state, detectionResult, stepState }: RAGGraph
                                 strokeWidth={inCycle ? 3 : 2}
                                 strokeDasharray={isAlloc ? "none" : "8 4"}
                                 markerEnd={`url(#${markerId})`}
-                                opacity={0.8}
+                                opacity={getEdgeOpacity(edge)}
+                                filter={inCycle ? "url(#glow-red)" : undefined}
+                                className="transition-opacity duration-200"
                             />
+                            {inCycle && (
+                                <circle r="4" fill="#ef4444" className="rag-flow-particle">
+                                    <animateMotion
+                                        dur="1.5s"
+                                        repeatCount="indefinite"
+                                        path={`M ${x1} ${y1} L ${x2} ${y2}`}
+                                    />
+                                </circle>
+                            )}
+                            {!inCycle && isAlloc && (
+                                <circle r="3" fill="#38bdf8" opacity="0.6" className="rag-flow-particle">
+                                    <animateMotion
+                                        dur="2.5s"
+                                        repeatCount="indefinite"
+                                        path={`M ${x1} ${y1} L ${x2} ${y2}`}
+                                    />
+                                </circle>
+                            )}
                         </g>
                     );
                 })}
 
-                {/* Nodes */}
                 {nodes.map((node) => {
                     const opacity = getNodeOpacity(node.id);
 
                     if (node.type === "process") {
                         const style = getProcessStyle(node.id);
                         return (
-                            <g key={node.id} opacity={opacity} className={style.glow}>
+                            <g
+                                key={node.id}
+                                opacity={opacity}
+                                className={`${style.glow} cursor-pointer transition-opacity duration-200`}
+                                onMouseEnter={() => setHoveredNode(node.id)}
+                                onMouseLeave={() => setHoveredNode(null)}
+                            >
                                 <circle cx={node.x} cy={node.y} r={processR}
-                                    fill={style.fill} stroke={style.stroke} strokeWidth={style.strokeWidth} />
+                                    fill={style.fill} stroke={style.stroke} strokeWidth={style.strokeWidth}
+                                    filter={hoveredNode === node.id ? "url(#glow-blue)" : undefined}
+                                />
                                 <text x={node.x} y={node.y}
                                     textAnchor="middle" dominantBaseline="central"
                                     fill="var(--color-foreground)" fontSize={14} fontWeight={700}>
@@ -222,19 +265,23 @@ export default function RAGGraph({ state, detectionResult, stepState }: RAGGraph
                     const resW = Math.max(56, count * 20);
                     const resH = 40;
                     const cellW = resW / count;
-                    // Left-align all resource boxes so they start exactly 28px left of their central anchor point
                     const startX = node.x - 28;
                     const startY = node.y - resH / 2;
 
                     return (
-                        <g key={node.id} opacity={opacity}>
-                            {/* Main Box */}
+                        <g
+                            key={node.id}
+                            opacity={opacity}
+                            className="cursor-pointer transition-opacity duration-200"
+                            onMouseEnter={() => setHoveredNode(node.id)}
+                            onMouseLeave={() => setHoveredNode(null)}
+                        >
                             <rect
                                 x={startX} y={startY}
                                 width={resW} height={resH} rx={4}
                                 fill="var(--color-surface)" stroke="#facc15" strokeWidth={2.5}
+                                filter={hoveredNode === node.id ? "url(#glow-blue)" : undefined}
                             />
-                            {/* Partitions */}
                             {count > 1 && Array.from({ length: count - 1 }).map((_, i) => (
                                 <line
                                     key={`part-${i}`}
@@ -244,7 +291,19 @@ export default function RAGGraph({ state, detectionResult, stepState }: RAGGraph
                                     opacity={0.6}
                                 />
                             ))}
-                            {/* Resource label (outside, top, centered on the first fixed cell) */}
+                            {Array.from({ length: count }).map((_, i) => {
+                                const allocated = state.allocation.reduce((sum, row) => sum + (i < row[rIdx] ? 1 : 0), 0);
+                                return (
+                                    <circle
+                                        key={`dot-${i}`}
+                                        cx={startX + i * cellW + cellW / 2}
+                                        cy={node.y}
+                                        r={5}
+                                        fill={allocated > 0 ? "#ef4444" : "#10b981"}
+                                        opacity={0.8}
+                                    />
+                                );
+                            })}
                             <text x={node.x} y={node.y - resH / 2 - 14}
                                 textAnchor="middle" dominantBaseline="central"
                                 fill="var(--color-foreground)" fontSize={14} fontWeight={700}>
@@ -255,7 +314,6 @@ export default function RAGGraph({ state, detectionResult, stepState }: RAGGraph
                 })}
             </svg>
 
-            {/* Legend */}
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-foreground/70 pt-3 border-t border-surface-border">
                 <span className="flex items-center gap-2">
                     <svg width="18" height="18"><circle cx="9" cy="9" r="7" fill="var(--color-surface)" stroke="#38bdf8" strokeWidth="2" /></svg>
@@ -270,18 +328,26 @@ export default function RAGGraph({ state, detectionResult, stepState }: RAGGraph
                     Deadlocked
                 </span>
                 <span className="flex items-center gap-2">
+                    <svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#10b981" /></svg>
+                    Available
+                </span>
+                <span className="flex items-center gap-2">
+                    <svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#ef4444" /></svg>
+                    Allocated
+                </span>
+                <span className="flex items-center gap-2">
                     <svg width="36" height="10">
                         <line x1="0" y1="5" x2="28" y2="5" stroke="#38bdf8" strokeWidth="2" />
                         <polygon points="28 2, 34 5, 28 8" fill="#38bdf8" />
                     </svg>
-                    Allocation (R→P)
+                    Allocation
                 </span>
                 <span className="flex items-center gap-2">
                     <svg width="36" height="10">
                         <line x1="0" y1="5" x2="28" y2="5" stroke="#fb923c" strokeWidth="2" strokeDasharray="6 3" />
                         <polygon points="28 2, 34 5, 28 8" fill="#fb923c" />
                     </svg>
-                    Request (P→R)
+                    Request
                 </span>
             </div>
         </div>

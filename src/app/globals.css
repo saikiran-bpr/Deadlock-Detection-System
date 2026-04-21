@@ -61,7 +61,6 @@ body {
     opacity: 0;
     transform: translateY(12px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
@@ -73,7 +72,6 @@ body {
     opacity: 0;
     transform: translateX(100%);
   }
-
   to {
     opacity: 1;
     transform: translateX(0);
@@ -85,11 +83,39 @@ body {
     opacity: 0;
     transform: translateY(20px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes pulse-red {
+  0%, 100% { filter: drop-shadow(0 0 4px #ef4444); }
+  50% { filter: drop-shadow(0 0 14px #ef4444); }
+}
+
+@keyframes glow-cyan {
+  0%, 100% { filter: drop-shadow(0 0 4px #22d3ee); }
+  50% { filter: drop-shadow(0 0 12px #22d3ee); }
+}
+
+@keyframes flow-dash {
+  0% { stroke-dashoffset: 24; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes orbit {
+  0% { transform: rotate(0deg) translateX(8px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(8px) rotate(-360deg); }
 }
 
 .animate-fade-in-up {
@@ -103,4 +129,17 @@ body {
 .btn-glow:hover {
   transform: translateY(-2px) scale(1.02);
   box-shadow: 0 0 15px var(--color-accent);
+}
+
+.rag-node-deadlocked { animation: pulse-red 1.5s ease-in-out infinite; }
+.rag-node-current { animation: glow-cyan 1.2s ease-in-out infinite; }
+.wfg-node-deadlocked { animation: pulse-red 1.5s ease-in-out infinite; }
+.wfg-edge-cycle { animation: flow-dash 0.8s linear infinite; }
+
+.timeline-block {
+  transition: all 0.3s ease;
+}
+.timeline-block:hover {
+  opacity: 1 !important;
+  filter: brightness(1.2);
 }
